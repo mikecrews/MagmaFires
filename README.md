@@ -1,4 +1,4 @@
-MagmaFires 1.1
+MagmaFires 1.2
 ================
 
 /fires on, /fires off - turn this plugin on or off

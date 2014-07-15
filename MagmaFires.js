@@ -4,8 +4,8 @@
 // :: In Rust We Trust :: Plugin Dev server for Magma :: net.connect 23.239.114.234:28025 ::
 var MagmaFires = {
 	Name: 'MagmaFires',
-	Version: 1.1,
-	Hour: 18.8,
+	Version: 1.2,
+	Hour: 18.9,
 	dsGet: function (key) { return DataStore.Get(this.Name, key); },
 	dsAdd: function (key, val) { DataStore.Add(this.Name, key, val); },
 	set Verbose (flag) { this.dsAdd('Verbose', flag); },
@@ -34,13 +34,13 @@ var MagmaFires = {
 		var woodPerMin;
 		switch(kind) {
 		case firename.Campfire: 
-			woodPerMin = 0.625;
+			woodPerMin = 0.635;
 			break;
 		default:
 			woodPerMin = 2.5;
 			break;
 		}
-		return Math.round(woodPerMin * rustHour(rustNight) * 10.7); // 18.8 to 5.5
+		return Math.round(woodPerMin * rustHour(rustNight) * 10.6); // 18.9 to 5.5
 	}
 	
 	function validSteamID(id) {
@@ -92,22 +92,22 @@ var MagmaFires = {
 	
 	function getXYZ(obj) {
 		var xyz = '';
-		xyz += String(System.Math.Round(obj.transform.position.x, 1)) + ',';
-		xyz += String(System.Math.Round(obj.transform.position.y, 1)) + ',';
-		xyz += String(System.Math.Round(obj.transform.position.z, 1));
+		xyz += obj.transform.position.x.toFixed(1) + ',';
+		xyz += obj.transform.position.y.toFixed(1) + ',';
+		xyz += obj.transform.position.z.toFixed(1);
 		return xyz;
 	}
 	
-	function addIfEligible(params, object) {
+	function addIfEligible(arr, object) {
 		for(var kind in firename) {
 			if(String(object.name) == firename[kind] && MagmaFires[kind]) {
 				if(MagmaFires.RestrictValid) {
 					if(MagmaFires.Restrict == String(object.ownerID)) {
-						params.Add(object);
+						arr.push(object);
 						return;
 					}
 				} else {
-					params.Add(object);
+					arr.push(object);
 					return;
 				}
 			} 
@@ -117,13 +117,13 @@ var MagmaFires = {
 	function getFires() {
 		var type, depobjs;
 		if(Util.TryFindType('DeployableObject', type)) {
-			depobjs = UnityEngine.Resources.FindObjectsOfTypeAll(type);
+			depobjs = UnityEngine.Object.FindObjectsOfType(type);
 		}
-		var fires = new ParamsList();
+		var fires = [];
 		for(var i=0; i < depobjs.Length; i++) {
 			addIfEligible(fires, depobjs[i]);
 		}
-		return fires.ToArray();
+		return fires;
 	}
 	
 	function getFireInventory(fire) {
@@ -141,8 +141,9 @@ var MagmaFires = {
 	
 	function clearFires() {
 		var fires = getFires();
+		vLog('Got ' + fires.length + ' fires.');
 		var count=0, inv;
-		for(var i=0; i < fires.Length; i++) {
+		for(var i=0; i < fires.length; i++) {
 			inv = getFireInventory(fires[i]);
 			inv.Clear();
 			count++;
@@ -201,28 +202,27 @@ var MagmaFires = {
 		var charcoalID = '775271474', woodID = '1359255965';
 		var fuel = getDataBlock(woodID);
 		var waste = getDataBlock(charcoalID);
-		vLog('loadFuelToFires: fires=' + fires.Length + ', fuel=' + String(fuel) + ', waste=' + String(waste));
-		var loaded = new ParamsList();
-		for(var i=0; i < fires.Length; i++) {
+		vLog('loadFuelToFires: fires=' + fires.length + ', fuel=' + String(fuel) + ', waste=' + String(waste));
+		var loaded = [];
+		for(var i=0; i < fires.length; i++) {
 			if(String(fires[i]._carrier.name).indexOf('(Clone)') == -1) {
 				vLog('Carrier undefined. Skipped ' + fires[i].name + ' ' + String(fires[i].ownerID) + '@' + getXYZ(fires[i]) + ' on the ground.');
 				continue; 
 			}
 			if(loadFireIfEmpty(fires[i], fuel, waste, rustNight)) {
-				loaded.Add(fires[i]); 
+				loaded.push(fires[i]); 
 			}
 		}
-		return loaded.ToArray();
+		return loaded;
 	}
 	
 	function igniteFires(fires) {
-		vLog('Igniting ' + fires.Length + ' fires.');
-		var fire, fbbl;
-		for(var i=0; i < fires.Length; i++) {
-			fire = fires.Get(i);
-			fbbl = fire.GetComponent('FireBarrel');
+		vLog('Igniting ' + fires.length + ' fires.');
+		var fbbl;
+		for(var i=0; i < fires.length; i++) {
+			fbbl = fires[i].GetComponent('FireBarrel');
 			fbbl.SetOn(true);
-			vLog('Ignited fire ' + String(fire.ownerID) + '@' + getXYZ(fire));
+			vLog('Ignited fire ' + String(fires[i].ownerID) + '@' + getXYZ(fires[i]));
 		}
 	}
 		
